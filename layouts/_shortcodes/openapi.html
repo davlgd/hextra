@@ -1,19 +1,20 @@
 {{- /*
-Render an OpenAPI description with Swagger UI.
+  Render an OpenAPI description with Swagger UI.
 
-@param {string} src The OpenAPI description (JSON or YAML): a page resource, a global asset, a file under the static directory, or a URL.
-@param {string} 0 Same as src.
-@param {string} docExpansion How operations are expanded: list (default), full or none.
-@param {int} defaultModelsExpandDepth Expansion depth of the schemas section, -1 to hide it (default 1).
-@param {bool} filter Show a field to filter operations by tag (default false).
-@param {bool} tryItOutEnabled Open the "Try it out" section of operations by default (default false).
-@param {string} tagsSorter Sort tags alphabetically with alpha (default: document order).
-@param {string} operationsSorter Sort operations with alpha or method (default: document order).
+  @param {string} src The OpenAPI description (JSON or YAML): a page resource, a global asset, a file under the static directory, or a URL.
+  @param {string} 0 Same as src.
+  @param {string} docExpansion How operations are expanded: list (default), full or none.
+  @param {int} defaultModelsExpandDepth Expansion depth of the schemas section, -1 to hide it (default 1).
+  @param {bool} filter Show a field to filter operations by tag (default false).
+  @param {bool} tryItOutEnabled Open the "Try it out" section of operations by default (default false).
+  @param {string} tagsSorter Sort tags alphabetically with alpha (default: document order).
+  @param {string} operationsSorter Sort operations with alpha or method (default: document order).
 
-@example {{< openapi "openapi.yaml" >}}
-@example {{< openapi src="https://petstore3.swagger.io/api/v3/openapi.json" docExpansion="none" >}}
+  @example {{< openapi "openapi.yaml"
+>}}
+@example
+{{< openapi src="https://petstore3.swagger.io/api/v3/openapi.json" docExpansion="none" >}}
 */ -}}
-
 {{- $src := .Get "src" | default (.Get 0) -}}
 {{- if not $src -}}
   {{- errorf "The %q shortcode requires the path or URL of an OpenAPI description. See %s" .Name .Position -}}
@@ -27,7 +28,12 @@ Render an OpenAPI description with Swagger UI.
   {{- with or (.Page.Resources.Get $src) (resources.Get $src) -}}
     {{- $url = .RelPermalink -}}
   {{- else -}}
-    {{- $url = partial "utils/file-path" (dict "page" .Page "path" $src) -}}
+    {{- if hasPrefix $src "/" -}}
+      {{- /* File under the static directory */ -}}
+      {{- $url = relURL (strings.TrimPrefix "/" $src) -}}
+    {{- else -}}
+      {{- errorf "The %q shortcode could not find the OpenAPI description %q: it must be a page resource, a file in the assets directory, a file in the static directory with a path starting with /, or a URL. See %s" .Name $src .Position -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 
@@ -53,7 +59,12 @@ Render an OpenAPI description with Swagger UI.
 
 {{- range $key := slice "filter" "tryItOutEnabled" -}}
   {{- with $.Get $key -}}
-    {{- $config = merge $config (dict $key (eq (printf "%v" .) "true")) -}}
+    {{- $value := printf "%v" . -}}
+    {{- if in (slice "true" "false") $value -}}
+      {{- $config = merge $config (dict $key (eq $value "true")) -}}
+    {{- else -}}
+      {{- warnf "openapi: invalid %s value %q, expected true or false. See %s" $key $value $.Position -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 
@@ -75,4 +86,5 @@ Render an OpenAPI description with Swagger UI.
 
 {{- .Page.Store.Set "hasOpenAPI" true -}}
 
-<div class="hextra-openapi not-prose" data-url="{{ $url }}" data-config="{{ $config | jsonify }}"></div>
+
+<div class="hextra-openapi not-prose" role="region" aria-label="API reference" data-url="{{ $url }}" data-config="{{ $config | jsonify }}"></div>
