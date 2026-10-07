@@ -28,5 +28,5 @@ Hugo と Hextra が提供する追加のショートコード:
   {{< card link="others" title="Others" icon="view-grid" >}}
   {{< card link="asciinema" title="Asciinema Player" icon="terminal" >}}
   {{< card link="gallery" title="画像ギャラリー" icon="photograph" >}}
-  {{< card link="openapi" title="OpenAPI" icon="code" >}}
+  {{< card link="openapi" title="OpenAPI" icon="simple:openapiinitiative" >}}
 {{< /cards >}}
